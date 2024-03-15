@@ -20,6 +20,11 @@ try:
 except (ModuleNotFoundError, ImportError):
     from .pywinnow import _winnow
 
+import logging
+import numpy as np
+import pygments
+from pygments import lexers, token
+
 def filter_code(code, filename, language=None):
     """Tokenize and filter a code document. Replace variable names with
     V, function names with F, object names with O, and strings with S.
@@ -47,6 +52,7 @@ def filter_code(code, filename, language=None):
     offset = 0
     offsets = [[0,0]]
     variable_tokens = {token.Name, token.Name.Variable, token.Name.Attribute}
+    number_tokens = {token.Literal.Number, token.Operator.Word}
     for t in tokens:
         if t[0] in variable_tokens:
             out_code += "V"
@@ -74,9 +80,14 @@ def filter_code(code, filename, language=None):
                 out_code += "S"
                 offsets.append([len(out_code) - 1, offset])
                 offset += len(t[1]) - 1
+        elif t[0] in number_tokens:
+            out_code += "N"
+            offsets.append([len(out_code) - 1, offset])
+            offset += len(t[1]) - 1
         else:
             out_code += t[1]
     return out_code, np.array(offsets)
+
 
 def hashed_kgrams(string, k):
     """Return hashes of all k-grams in a string"""
